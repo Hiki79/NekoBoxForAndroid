@@ -9,4 +9,10 @@
     <color name="nb_surface_variant">#121619</color>
     <color name="nb_outline">#394349</color>
     <color name="nb_text_tertiary">#AAB6BC</color>
+    <color name="sakura_primary">#98445F</color>
+    <color name="sakura_primary_dark">#3C2830</color>
+    <color name="sakura_secondary">#2F8074</color>
+    <color name="sakura_secondary_dark">#245E57</color>
+    <color name="sakura_blush">#E9B0C1</color>
+    <color name="sakura_rose">#7F3E53</color>
 </resources>

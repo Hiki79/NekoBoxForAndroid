@@ -472,6 +472,32 @@
         <item name="primaryOrTextPrimary">?android:textColorPrimary</item>
     </style>
 
+    <style name="Theme.SagerNet.Sakura" parent="Theme.SagerNet">
+        <item name="colorPrimary">@color/sakura_primary</item>
+        <item name="colorPrimaryDark">@color/sakura_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/sakura_primary_dark</item>
+        <item name="colorAccent">@color/sakura_secondary</item>
+        <item name="colorSecondary">@color/sakura_secondary</item>
+        <item name="colorSecondaryVariant">@color/sakura_secondary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorMaterial100">@color/sakura_blush</item>
+        <item name="colorMaterial300">@color/sakura_rose</item>
+    </style>
+
+    <style name="Theme.SagerNet.Dialog.Sakura" parent="Theme.SagerNet.Dialog">
+        <item name="colorPrimary">@color/sakura_primary</item>
+        <item name="colorPrimaryDark">@color/sakura_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/sakura_primary_dark</item>
+        <item name="colorAccent">@color/sakura_secondary</item>
+        <item name="colorSecondary">@color/sakura_secondary</item>
+        <item name="colorSecondaryVariant">@color/sakura_secondary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorMaterial100">@color/sakura_blush</item>
+        <item name="colorMaterial300">@color/sakura_rose</item>
+    </style>
+
     <style name="Theme.Start" parent="Theme.MaterialComponents.DayNight">
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="colorPrimary">@android:color/transparent</item>

@@ -209,6 +209,10 @@
             android:name="io.nekohasekai.sagernet.ui.RuleLibraryActivity"
             android:configChanges="uiMode" />
         <activity
+            android:name="io.nekohasekai.sagernet.ui.WebDavSettingsActivity"
+            android:configChanges="uiMode"
+            android:parentActivityName="io.nekohasekai.sagernet.ui.MainActivity" />
+        <activity
             android:name="io.nekohasekai.sagernet.ui.AppListActivity"
             android:configChanges="uiMode" />
         <activity

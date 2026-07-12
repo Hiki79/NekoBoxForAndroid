@@ -25,6 +25,7 @@
         <item>@color/material_grey_500</item>
         <item>@color/material_blue_grey_500</item>
         <item>@color/material_light_black</item>
+        <item>@color/sakura_primary</item>
     </integer-array>
 
     <color name="material_amber_100">#FFECB3</color>
@@ -297,5 +298,12 @@
     <color name="nb_surface_variant">#F4F7F8</color>
     <color name="nb_outline">#D8E0E4</color>
     <color name="nb_text_tertiary">#607079</color>
+
+    <color name="sakura_primary">#B34F70</color>
+    <color name="sakura_primary_dark">#673447</color>
+    <color name="sakura_secondary">#2F8074</color>
+    <color name="sakura_secondary_dark">#205C55</color>
+    <color name="sakura_blush">#F9DCE5</color>
+    <color name="sakura_rose">#A94A68</color>
 
 </resources>
