@@ -59,7 +59,7 @@ object BackupRestoreDialog {
                 val setting = choices.backupSettings.isChecked
 
                 val progress = LayoutProgressBinding.inflate(activity.layoutInflater).apply {
-                    content.text = activity.getString(R.string.backup_importing)
+                    this.content.text = activity.getString(R.string.backup_importing)
                 }
                 val progressDialog = MaterialAlertDialogBuilder(activity)
                     .setView(progress.root)
