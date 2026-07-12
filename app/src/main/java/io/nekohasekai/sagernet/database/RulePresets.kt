@@ -15,12 +15,21 @@ object RulePresets {
 
     val All: List<RulePreset>
         get() = listOf(
+            // 地区绕过
             bypassMainlandCN(),
-            globalProxy(),
-            blockAdsOnly(),
+            bypassMultiRegion(),
             bypassIran(),
             bypassRussia(),
-            bypassMultiRegion(),
+            // 应用分流
+            streamingProxy(),
+            aiServicesProxy(),
+            socialAppsProxy(),
+            googleServicesProxy(),
+            telegramProxy(),
+            devServicesProxy(),
+            // 基础
+            globalProxy(),
+            blockAdsOnly(),
         )
 
     fun byKey(key: String): RulePreset? = All.firstOrNull { it.key == key }
@@ -63,6 +72,12 @@ object RulePresets {
         outbound = -2,
     )
 
+    private fun appProxy(appName: String, geosite: String): RuleEntity = rule(
+        name = appName,
+        domains = "geosite:$geosite",
+        outbound = 0,
+    )
+
     private fun bypassRegion(country: String, display: String): List<RuleEntity> {
         val rules = mutableListOf<RuleEntity>()
         if (country == "cn") {
@@ -90,12 +105,16 @@ object RulePresets {
         return rules
     }
 
+    private fun bypassCN() = bypassRegion("cn", "中国")
+
+    // ===== 地区绕过预设 =====
+
     fun bypassMainlandCN(): RulePreset = RulePreset(
         key = "bypass_mainland_cn",
         nameRes = R.string.preset_bypass_mainland_cn,
         descriptionRes = R.string.preset_bypass_mainland_cn_desc,
         build = {
-            listOf(blockQuic(), blockAds()) + bypassRegion("cn", "中国")
+            listOf(blockQuic(), blockAds()) + bypassCN()
         },
     )
 
@@ -144,6 +163,88 @@ object RulePresets {
                 bypassRegion("cn", "中国") +
                 bypassRegion("ir", "Iran") +
                 bypassRegion("ru", "Russia")
+        },
+    )
+
+    // ===== 应用分流预设 =====
+
+    fun streamingProxy(): RulePreset = RulePreset(
+        key = "streaming_proxy",
+        nameRes = R.string.preset_streaming_proxy,
+        descriptionRes = R.string.preset_streaming_proxy_desc,
+        build = {
+            listOf(blockQuic(), blockAds()) + listOf(
+                appProxy("Netflix", "netflix"),
+                appProxy("Disney+", "disney"),
+                appProxy("YouTube", "youtube"),
+                appProxy("Spotify", "spotify"),
+                appProxy("TikTok", "tiktok"),
+                appProxy("HBO Max", "hbo"),
+            ) + bypassCN()
+        },
+    )
+
+    fun aiServicesProxy(): RulePreset = RulePreset(
+        key = "ai_proxy",
+        nameRes = R.string.preset_ai_proxy,
+        descriptionRes = R.string.preset_ai_proxy_desc,
+        build = {
+            listOf(blockAds()) + listOf(
+                appProxy("OpenAI / ChatGPT", "openai"),
+                appProxy("Google / Gemini", "google"),
+            ) + bypassCN()
+        },
+    )
+
+    fun socialAppsProxy(): RulePreset = RulePreset(
+        key = "social_proxy",
+        nameRes = R.string.preset_social_proxy,
+        descriptionRes = R.string.preset_social_proxy_desc,
+        build = {
+            listOf(blockAds()) + listOf(
+                appProxy("Telegram", "telegram"),
+                appProxy("WhatsApp", "whatsapp"),
+                appProxy("Twitter / X", "twitter"),
+                appProxy("Facebook", "facebook"),
+                appProxy("Instagram", "instagram"),
+                appProxy("Discord", "discord"),
+            ) + bypassCN()
+        },
+    )
+
+    fun googleServicesProxy(): RulePreset = RulePreset(
+        key = "google_proxy",
+        nameRes = R.string.preset_google_proxy,
+        descriptionRes = R.string.preset_google_proxy_desc,
+        build = {
+            listOf(blockAds()) + listOf(
+                appProxy("Google", "google"),
+                appProxy("YouTube", "youtube"),
+            ) + bypassCN()
+        },
+    )
+
+    fun telegramProxy(): RulePreset = RulePreset(
+        key = "telegram_proxy",
+        nameRes = R.string.preset_telegram_proxy,
+        descriptionRes = R.string.preset_telegram_proxy_desc,
+        build = {
+            listOf(blockAds()) + listOf(
+                appProxy("Telegram", "telegram"),
+            ) + bypassCN()
+        },
+    )
+
+    fun devServicesProxy(): RulePreset = RulePreset(
+        key = "dev_proxy",
+        nameRes = R.string.preset_dev_proxy,
+        descriptionRes = R.string.preset_dev_proxy_desc,
+        build = {
+            listOf(blockAds()) + listOf(
+                appProxy("GitHub", "github"),
+                appProxy("GitLab", "gitlab"),
+                appProxy("Docker", "docker"),
+            ) + bypassCN()
         },
     )
 }
