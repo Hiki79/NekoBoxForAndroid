@@ -17,7 +17,6 @@ import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryBinding
 import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryItemBinding
 import io.nekohasekai.sagernet.ktx.onMainDispatcher
 import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
-import io.nekohasekai.sagernet.ktx.needReload
 
 class RuleLibraryActivity : ThemedActivity() {
 
@@ -75,7 +74,6 @@ class RuleLibraryActivity : ThemedActivity() {
                         )
                     )
                     onMainDispatcher {
-                        needReload()
                         finish()
                     }
                 }
