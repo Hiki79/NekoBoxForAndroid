@@ -14,6 +14,7 @@ import io.nekohasekai.sagernet.R
 import io.nekohasekai.sagernet.database.DataStore
 import io.nekohasekai.sagernet.database.ProfileManager
 import io.nekohasekai.sagernet.database.RuleEntity
+import io.nekohasekai.sagernet.database.RulePresets
 import io.nekohasekai.sagernet.database.SagerDatabase
 import io.nekohasekai.sagernet.databinding.LayoutEmptyRouteBinding
 import io.nekohasekai.sagernet.databinding.LayoutRouteItemBinding
@@ -116,6 +117,37 @@ class RouteFragment : ToolbarFragment(R.layout.layout_route), Toolbar.OnMenuItem
                         }
                     }
                     .setNegativeButton(R.string.no, null)
+                    .show()
+            }
+            R.id.action_apply_preset -> {
+                val presets = RulePresets.All
+                val labels = presets.map { getString(it.nameRes) }.toTypedArray()
+                MaterialAlertDialogBuilder(activity)
+                    .setTitle(R.string.route_apply_preset_title)
+                    .setItems(labels) { _, which ->
+                        val preset = presets[which]
+                        MaterialAlertDialogBuilder(activity)
+                            .setTitle(getString(preset.nameRes))
+                            .setMessage(
+                                getString(preset.descriptionRes) + "\n\n" +
+                                    getString(R.string.route_apply_preset_message)
+                            )
+                            .setPositiveButton(R.string.yes) { _, _ ->
+                                runOnDefaultDispatcher {
+                                    ProfileManager.applyPreset(
+                                        preset,
+                                        replaceExisting = true,
+                                        enableRules = true,
+                                    )
+                                    ruleAdapter.reload()
+                                    onMainDispatcher {
+                                        needReload()
+                                    }
+                                }
+                            }
+                            .setNegativeButton(R.string.no, null)
+                            .show()
+                    }
                     .show()
             }
             R.id.action_manage_assets -> {
