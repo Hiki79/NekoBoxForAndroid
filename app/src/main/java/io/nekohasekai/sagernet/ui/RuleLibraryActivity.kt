@@ -1,5 +1,6 @@
 package io.nekohasekai.sagernet.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -7,16 +8,11 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.nekohasekai.sagernet.R
 import io.nekohasekai.sagernet.database.GeositeEntry
 import io.nekohasekai.sagernet.database.GeositeLibrary
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.RuleEntity
 import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryBinding
 import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryItemBinding
-import io.nekohasekai.sagernet.ktx.onMainDispatcher
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
 
 class RuleLibraryActivity : ThemedActivity() {
 
@@ -49,36 +45,12 @@ class RuleLibraryActivity : ThemedActivity() {
         })
     }
 
-    private fun showOutboundPicker(entry: GeositeEntry) {
-        val labels = arrayOf(
-            getString(R.string.route_proxy),
-            getString(R.string.route_bypass),
-            getString(R.string.route_block),
-        )
-        MaterialAlertDialogBuilder(this)
-            .setTitle(entry.name + " (geosite:" + entry.geosite + ")")
-            .setMessage(entry.description)
-            .setItems(labels) { _, which ->
-                val outbound = when (which) {
-                    0 -> 0L
-                    1 -> -1L
-                    else -> -2L
-                }
-                runOnDefaultDispatcher {
-                    ProfileManager.createRule(
-                        RuleEntity(
-                            name = entry.name,
-                            domains = "geosite:" + entry.geosite,
-                            outbound = outbound,
-                            enabled = true,
-                        )
-                    )
-                    onMainDispatcher {
-                        finish()
-                    }
-                }
-            }
-            .show()
+    private fun fillRoute(entry: GeositeEntry) {
+        startActivity(Intent(this, RouteSettingsActivity::class.java).apply {
+            putExtra(RouteSettingsActivity.EXTRA_ROUTE_NAME, entry.name)
+            putExtra(RouteSettingsActivity.EXTRA_ROUTE_DOMAIN, "geosite:" + entry.geosite)
+        })
+        finish()
     }
 
     inner class LibraryAdapter : RecyclerView.Adapter<LibraryHolder>() {
@@ -114,7 +86,7 @@ class RuleLibraryActivity : ThemedActivity() {
             b.entryDesc.text = entry.description
             b.entryTags.text = entry.tags.joinToString(" · ")
             itemView.setOnClickListener {
-                showOutboundPicker(entry)
+                fillRoute(entry)
             }
         }
     }
