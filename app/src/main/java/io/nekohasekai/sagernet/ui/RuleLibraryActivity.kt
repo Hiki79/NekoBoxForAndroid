@@ -6,6 +6,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.nekohasekai.sagernet.R
@@ -35,12 +36,29 @@ class RuleLibraryActivity : ThemedActivity() {
         adapter = LibraryAdapter()
         binding.ruleList.layoutManager = LinearLayoutManager(this)
         binding.ruleList.adapter = adapter
+        binding.ruleList.setHasFixedSize(true)
+
+        binding.categoryGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            val checkedId = checkedIds.firstOrNull() ?: R.id.categoryAll
+            adapter.setCategory(
+                when (checkedId) {
+                    R.id.categoryStreaming -> LibraryCategory.STREAMING
+                    R.id.categorySocial -> LibraryCategory.SOCIAL
+                    R.id.categoryAi -> LibraryCategory.AI
+                    R.id.categoryDevelopment -> LibraryCategory.DEVELOPMENT
+                    R.id.categoryGames -> LibraryCategory.GAMES
+                    R.id.categoryRegions -> LibraryCategory.REGIONS
+                    R.id.categoryAds -> LibraryCategory.ADS
+                    else -> LibraryCategory.ALL
+                }
+            )
+        }
 
         binding.searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                adapter.filter(s?.toString() ?: "")
+                adapter.setQuery(s?.toString() ?: "")
             }
         })
     }
@@ -56,12 +74,29 @@ class RuleLibraryActivity : ThemedActivity() {
     inner class LibraryAdapter : RecyclerView.Adapter<LibraryHolder>() {
 
         private val items = GeositeLibrary.All.toMutableList()
+        private var query = ""
+        private var category = LibraryCategory.ALL
 
-        fun filter(query: String) {
-            val result = GeositeLibrary.search(query)
+        fun setQuery(value: String) {
+            query = value
+            refresh()
+        }
+
+        fun setCategory(value: LibraryCategory) {
+            category = value
+            refresh()
+        }
+
+        private fun refresh() {
+            val result = GeositeLibrary.search(query).filter { entry ->
+                category.tag == null || entry.tags.any {
+                    it.equals(category.tag, ignoreCase = true)
+                }
+            }
             items.clear()
             items.addAll(result)
             notifyDataSetChanged()
+            binding.emptyState.isVisible = items.isEmpty()
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LibraryHolder {
@@ -85,9 +120,19 @@ class RuleLibraryActivity : ThemedActivity() {
             b.entryGeosite.text = "geosite:" + entry.geosite
             b.entryDesc.text = entry.description
             b.entryTags.text = entry.tags.joinToString(" · ")
-            itemView.setOnClickListener {
-                fillRoute(entry)
-            }
+            itemView.setOnClickListener { fillRoute(entry) }
+            b.fillRule.setOnClickListener { fillRoute(entry) }
         }
+    }
+
+    enum class LibraryCategory(val tag: String?) {
+        ALL(null),
+        STREAMING("流媒体"),
+        SOCIAL("社交"),
+        AI("AI"),
+        DEVELOPMENT("开发"),
+        GAMES("游戏"),
+        REGIONS("地区"),
+        ADS("广告"),
     }
 }

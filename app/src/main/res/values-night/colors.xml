@@ -2,4 +2,11 @@
 <resources>
     <color name="fab_color_progress">@color/material_light_white</color>
     <color name="preference_simple_menu_background">#303030</color>
+    <color name="nb_primary">#55BDB3</color>
+    <color name="nb_primary_dark">#123F3B</color>
+    <color name="nb_secondary">#82B1FF</color>
+    <color name="nb_surface">#1C2023</color>
+    <color name="nb_surface_variant">#121619</color>
+    <color name="nb_outline">#394349</color>
+    <color name="nb_text_tertiary">#AAB6BC</color>
 </resources>

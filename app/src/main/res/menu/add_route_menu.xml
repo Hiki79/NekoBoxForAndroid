@@ -16,8 +16,9 @@
         app:showAsAction="never" />
     <item
         android:id="@+id/action_rule_library"
+        android:icon="@drawable/ic_baseline_rule_folder_24"
         android:title="@string/route_rule_library"
-        app:showAsAction="never" />
+        app:showAsAction="ifRoom" />
     <item
         android:id="@+id/action_manage_assets"
         android:title="@string/route_manage_assets"

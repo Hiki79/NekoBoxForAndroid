@@ -1,51 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.NekoBox.ListCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="?attr/selectableItemBackground"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:layout_marginStart="@dimen/nb_space_md"
+    android:layout_marginTop="@dimen/nb_space_xs"
+    android:layout_marginEnd="@dimen/nb_space_md"
+    android:layout_marginBottom="@dimen/nb_space_xs"
+    android:clickable="true"
+    android:focusable="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/entryName"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="?android:attr/textColorPrimary"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:paddingStart="@dimen/nb_space_lg"
+            android:paddingTop="@dimen/nb_space_md"
+            android:paddingBottom="@dimen/nb_space_md">
 
-        <TextView
-            android:id="@+id/entryGeosite"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:alpha="0.6"
-            android:textAppearance="?android:attr/textAppearanceSmall"
-            android:textColor="?attr/accentOrTextSecondary" />
+            <TextView
+                android:id="@+id/entryName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="@style/TextAppearance.NekoBox.ItemTitle"
+                android:textColor="?android:attr/textColorPrimary" />
+
+            <TextView
+                android:id="@+id/entryDesc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.NekoBox.ItemBody"
+                android:textColor="?android:attr/textColorSecondary" />
+
+            <TextView
+                android:id="@+id/entryGeosite"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/nb_space_sm"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.NekoBox.ItemMeta"
+                android:textColor="?attr/primaryOrTextSecondary" />
+
+            <TextView
+                android:id="@+id/entryTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="@style/TextAppearance.NekoBox.ItemMeta"
+                android:textColor="@color/nb_text_tertiary" />
+
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatImageButton
+            android:id="@+id/fillRule"
+            android:layout_width="@dimen/nb_touch_target"
+            android:layout_height="@dimen/nb_touch_target"
+            android:layout_marginEnd="@dimen/nb_space_xs"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/rule_library_fill"
+            android:padding="@dimen/nb_space_md"
+            app:srcCompat="@drawable/ic_action_note_add"
+            app:tint="?attr/colorPrimary" />
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/entryDesc"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:alpha="0.7"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="?attr/accentOrTextSecondary" />
-
-    <TextView
-        android:id="@+id/entryTags"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:alpha="0.5"
-        android:textAppearance="?android:attr/textAppearanceSmall"
-        android:textColor="?attr/accentOrTextSecondary" />
-
-</LinearLayout>
+</com.google.android.material.card.MaterialCardView>

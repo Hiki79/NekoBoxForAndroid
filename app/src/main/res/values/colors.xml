@@ -290,4 +290,12 @@
 
     <color name="preference_simple_menu_background">#FAFAFA</color>
 
+    <color name="nb_primary">#0B6E69</color>
+    <color name="nb_primary_dark">#07514E</color>
+    <color name="nb_secondary">#2F6FBB</color>
+    <color name="nb_surface">#FFFFFF</color>
+    <color name="nb_surface_variant">#F4F7F8</color>
+    <color name="nb_outline">#D8E0E4</color>
+    <color name="nb_text_tertiary">#607079</color>
+
 </resources>

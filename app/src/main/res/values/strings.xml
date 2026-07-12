@@ -170,6 +170,16 @@
     <string name="route_rule_library">Rule Library</string>
     <string name="rule_library_title">Rule Library</string>
     <string name="rule_library_search_hint">Search rules (e.g. netflix, telegram, AI)</string>
+    <string name="rule_library_all">All</string>
+    <string name="rule_library_streaming">Streaming</string>
+    <string name="rule_library_social">Social</string>
+    <string name="rule_library_ai">AI</string>
+    <string name="rule_library_development">Development</string>
+    <string name="rule_library_games">Games</string>
+    <string name="rule_library_regions">Regions</string>
+    <string name="rule_library_ads">Ads</string>
+    <string name="rule_library_fill">Fill route</string>
+    <string name="rule_library_no_results">No matching rules</string>
     <string name="preset_bypass_mainland_cn">Bypass Mainland China</string>
     <string name="preset_bypass_mainland_cn_desc">Block QUIC/ADs, bypass CN domains and IPs</string>
     <string name="preset_global_proxy">Global Proxy</string>
