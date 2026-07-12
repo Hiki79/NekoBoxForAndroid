@@ -1,0 +1,123 @@
+package io.nekohasekai.sagernet.ui
+
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
+import android.view.LayoutInflater
+import android.view.ViewGroup
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import io.nekohasekai.sagernet.R
+import io.nekohasekai.sagernet.database.GeositeEntry
+import io.nekohasekai.sagernet.database.GeositeLibrary
+import io.nekohasekai.sagernet.database.ProfileManager
+import io.nekohasekai.sagernet.database.RuleEntity
+import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryBinding
+import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryItemBinding
+import io.nekohasekai.sagernet.ktx.onMainDispatcher
+import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
+import io.nekohasekai.sagernet.ktx.needReload
+
+class RuleLibraryActivity : ThemedActivity() {
+
+    private lateinit var binding: LayoutRuleLibraryBinding
+    private lateinit var adapter: LibraryAdapter
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        binding = LayoutRuleLibraryBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        setSupportActionBar(findViewById(R.id.toolbar))
+        supportActionBar?.apply {
+            setTitle(R.string.rule_library_title)
+            setDisplayHomeAsUpEnabled(true)
+            setHomeAsUpIndicator(R.drawable.ic_navigation_close)
+        }
+
+        adapter = LibraryAdapter()
+        binding.ruleList.layoutManager = LinearLayoutManager(this)
+        binding.ruleList.adapter = adapter
+
+        binding.searchInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                adapter.filter(s?.toString() ?: "")
+            }
+        })
+    }
+
+    private fun showOutboundPicker(entry: GeositeEntry) {
+        val labels = arrayOf(
+            getString(R.string.route_proxy),
+            getString(R.string.route_bypass),
+            getString(R.string.route_block),
+        )
+        MaterialAlertDialogBuilder(this)
+            .setTitle(entry.name + " (geosite:" + entry.geosite + ")")
+            .setMessage(entry.description)
+            .setItems(labels) { _, which ->
+                val outbound = when (which) {
+                    0 -> 0L
+                    1 -> -1L
+                    else -> -2L
+                }
+                runOnDefaultDispatcher {
+                    ProfileManager.createRule(
+                        RuleEntity(
+                            name = entry.name,
+                            domains = "geosite:" + entry.geosite,
+                            outbound = outbound,
+                            enabled = true,
+                        )
+                    )
+                    onMainDispatcher {
+                        needReload()
+                        finish()
+                    }
+                }
+            }
+            .show()
+    }
+
+    inner class LibraryAdapter : RecyclerView.Adapter<LibraryHolder>() {
+
+        private val items = GeositeLibrary.All.toMutableList()
+
+        fun filter(query: String) {
+            val result = GeositeLibrary.search(query)
+            items.clear()
+            items.addAll(result)
+            notifyDataSetChanged()
+        }
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LibraryHolder {
+            return LibraryHolder(
+                LayoutRuleLibraryItemBinding.inflate(layoutInflater, parent, false)
+            )
+        }
+
+        override fun onBindViewHolder(holder: LibraryHolder, position: Int) {
+            holder.bind(items[position])
+        }
+
+        override fun getItemCount(): Int = items.size
+    }
+
+    inner class LibraryHolder(val b: LayoutRuleLibraryItemBinding) :
+        RecyclerView.ViewHolder(b.root) {
+
+        fun bind(entry: GeositeEntry) {
+            b.entryName.text = entry.name
+            b.entryGeosite.text = "geosite:" + entry.geosite
+            b.entryDesc.text = entry.description
+            b.entryTags.text = entry.tags.joinToString(" · ")
+            itemView.setOnClickListener {
+                showOutboundPicker(entry)
+            }
+        }
+    }
+}

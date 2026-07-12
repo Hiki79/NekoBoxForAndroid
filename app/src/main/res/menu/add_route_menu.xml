@@ -15,6 +15,10 @@
         android:title="@string/route_apply_preset"
         app:showAsAction="never" />
     <item
+        android:id="@+id/action_rule_library"
+        android:title="@string/route_rule_library"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/action_manage_assets"
         android:title="@string/route_manage_assets"
         app:showAsAction="never" />

@@ -167,6 +167,9 @@
     <string name="route_apply_preset">Apply Preset</string>
     <string name="route_apply_preset_title">Select a preset</string>
     <string name="route_apply_preset_message">This will replace all existing routing rules with the selected preset. Continue?</string>
+    <string name="route_rule_library">Rule Library</string>
+    <string name="rule_library_title">Rule Library</string>
+    <string name="rule_library_search_hint">Search rules (e.g. netflix, telegram, AI)</string>
     <string name="preset_bypass_mainland_cn">Bypass Mainland China</string>
     <string name="preset_bypass_mainland_cn_desc">Block QUIC/ADs, bypass CN domains and IPs</string>
     <string name="preset_global_proxy">Global Proxy</string>
