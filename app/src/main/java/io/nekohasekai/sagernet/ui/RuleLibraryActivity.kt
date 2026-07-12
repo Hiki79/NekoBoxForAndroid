@@ -1,22 +1,19 @@
 package io.nekohasekai.sagernet.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.nekohasekai.sagernet.R
 import io.nekohasekai.sagernet.database.GeositeEntry
 import io.nekohasekai.sagernet.database.GeositeLibrary
-import io.nekohasekai.sagernet.database.ProfileManager
-import io.nekohasekai.sagernet.database.RuleEntity
 import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryBinding
 import io.nekohasekai.sagernet.databinding.LayoutRuleLibraryItemBinding
-import io.nekohasekai.sagernet.ktx.onMainDispatcher
-import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
 
 class RuleLibraryActivity : ThemedActivity() {
 
@@ -39,57 +36,67 @@ class RuleLibraryActivity : ThemedActivity() {
         adapter = LibraryAdapter()
         binding.ruleList.layoutManager = LinearLayoutManager(this)
         binding.ruleList.adapter = adapter
+        binding.ruleList.setHasFixedSize(true)
+
+        binding.categoryGroup.setOnCheckedStateChangeListener { _, checkedIds ->
+            val checkedId = checkedIds.firstOrNull() ?: R.id.categoryAll
+            adapter.setCategory(
+                when (checkedId) {
+                    R.id.categoryStreaming -> LibraryCategory.STREAMING
+                    R.id.categorySocial -> LibraryCategory.SOCIAL
+                    R.id.categoryAi -> LibraryCategory.AI
+                    R.id.categoryDevelopment -> LibraryCategory.DEVELOPMENT
+                    R.id.categoryGames -> LibraryCategory.GAMES
+                    R.id.categoryRegions -> LibraryCategory.REGIONS
+                    R.id.categoryAds -> LibraryCategory.ADS
+                    else -> LibraryCategory.ALL
+                }
+            )
+        }
 
         binding.searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun onTextChanged(s: CharSequence?, p1: Int, p2: Int, p3: Int) {}
             override fun afterTextChanged(s: Editable?) {
-                adapter.filter(s?.toString() ?: "")
+                adapter.setQuery(s?.toString() ?: "")
             }
         })
     }
 
-    private fun showOutboundPicker(entry: GeositeEntry) {
-        val labels = arrayOf(
-            getString(R.string.route_proxy),
-            getString(R.string.route_bypass),
-            getString(R.string.route_block),
-        )
-        MaterialAlertDialogBuilder(this)
-            .setTitle(entry.name + " (geosite:" + entry.geosite + ")")
-            .setMessage(entry.description)
-            .setItems(labels) { _, which ->
-                val outbound = when (which) {
-                    0 -> 0L
-                    1 -> -1L
-                    else -> -2L
-                }
-                runOnDefaultDispatcher {
-                    ProfileManager.createRule(
-                        RuleEntity(
-                            name = entry.name,
-                            domains = "geosite:" + entry.geosite,
-                            outbound = outbound,
-                            enabled = true,
-                        )
-                    )
-                    onMainDispatcher {
-                        finish()
-                    }
-                }
-            }
-            .show()
+    private fun fillRoute(entry: GeositeEntry) {
+        startActivity(Intent(this, RouteSettingsActivity::class.java).apply {
+            putExtra(RouteSettingsActivity.EXTRA_ROUTE_NAME, entry.name)
+            putExtra(RouteSettingsActivity.EXTRA_ROUTE_DOMAIN, "geosite:" + entry.geosite)
+        })
+        finish()
     }
 
     inner class LibraryAdapter : RecyclerView.Adapter<LibraryHolder>() {
 
         private val items = GeositeLibrary.All.toMutableList()
+        private var query = ""
+        private var category = LibraryCategory.ALL
 
-        fun filter(query: String) {
-            val result = GeositeLibrary.search(query)
+        fun setQuery(value: String) {
+            query = value
+            refresh()
+        }
+
+        fun setCategory(value: LibraryCategory) {
+            category = value
+            refresh()
+        }
+
+        private fun refresh() {
+            val result = GeositeLibrary.search(query).filter { entry ->
+                category.tag == null || entry.tags.any {
+                    it.equals(category.tag, ignoreCase = true)
+                }
+            }
             items.clear()
             items.addAll(result)
             notifyDataSetChanged()
+            binding.emptyState.isVisible = items.isEmpty()
         }
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): LibraryHolder {
@@ -113,9 +120,19 @@ class RuleLibraryActivity : ThemedActivity() {
             b.entryGeosite.text = "geosite:" + entry.geosite
             b.entryDesc.text = entry.description
             b.entryTags.text = entry.tags.joinToString(" · ")
-            itemView.setOnClickListener {
-                showOutboundPicker(entry)
-            }
+            itemView.setOnClickListener { fillRoute(entry) }
+            b.fillRule.setOnClickListener { fillRoute(entry) }
         }
+    }
+
+    enum class LibraryCategory(val tag: String?) {
+        ALL(null),
+        STREAMING("流媒体"),
+        SOCIAL("社交"),
+        AI("AI"),
+        DEVELOPMENT("开发"),
+        GAMES("游戏"),
+        REGIONS("地区"),
+        ADS("广告"),
     }
 }

@@ -5,12 +5,12 @@
         <item name="actionModeCloseDrawable">@drawable/ic_navigation_close</item>
         <item name="colorButtonNormal">?colorAccent</item>
         <item name="android:navigationBarColor">?colorPrimaryDark</item>
-        <item name="colorPrimary">@color/material_pink_500</item>
-        <item name="colorPrimaryDark">@color/material_pink_700</item>
-        <item name="colorAccent">@color/material_pink_accent_200</item>
+        <item name="colorPrimary">@color/nb_primary</item>
+        <item name="colorPrimaryDark">@color/nb_primary_dark</item>
+        <item name="colorAccent">@color/nb_primary</item>
 
-        <item name="colorMaterial100">@color/material_pink_100</item>
-        <item name="colorMaterial300">@color/material_pink_300</item>
+        <item name="colorMaterial100">@color/material_teal_100</item>
+        <item name="colorMaterial300">@color/material_teal_300</item>
 
         <item name="accentOrTextSecondary">?colorAccent</item>
         <item name="accentOrTextPrimary">?colorAccent</item>
@@ -53,12 +53,12 @@
         <item name="actionModeCloseDrawable">@drawable/ic_navigation_close</item>
         <item name="colorButtonNormal">?colorAccent</item>
         <item name="android:navigationBarColor">?colorPrimaryDark</item>
-        <item name="colorPrimary">@color/material_pink_500</item>
-        <item name="colorPrimaryDark">@color/material_pink_700</item>
-        <item name="colorAccent">@color/material_pink_accent_200</item>
+        <item name="colorPrimary">@color/nb_primary</item>
+        <item name="colorPrimaryDark">@color/nb_primary_dark</item>
+        <item name="colorAccent">@color/nb_primary</item>
 
-        <item name="colorMaterial100">@color/material_pink_100</item>
-        <item name="colorMaterial300">@color/material_pink_300</item>
+        <item name="colorMaterial100">@color/material_teal_100</item>
+        <item name="colorMaterial300">@color/material_teal_300</item>
 
         <item name="accentOrTextSecondary">?colorAccent</item>
         <item name="accentOrTextPrimary">?colorAccent</item>
@@ -470,6 +470,32 @@
         <item name="accentOrTextPrimary">?android:textColorPrimary</item>
         <item name="primaryOrTextSecondary">?android:textColorSecondary</item>
         <item name="primaryOrTextPrimary">?android:textColorPrimary</item>
+    </style>
+
+    <style name="Theme.SagerNet.Sakura" parent="Theme.SagerNet">
+        <item name="colorPrimary">@color/sakura_primary</item>
+        <item name="colorPrimaryDark">@color/sakura_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/sakura_primary_dark</item>
+        <item name="colorAccent">@color/sakura_secondary</item>
+        <item name="colorSecondary">@color/sakura_secondary</item>
+        <item name="colorSecondaryVariant">@color/sakura_secondary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorMaterial100">@color/sakura_blush</item>
+        <item name="colorMaterial300">@color/sakura_rose</item>
+    </style>
+
+    <style name="Theme.SagerNet.Dialog.Sakura" parent="Theme.SagerNet.Dialog">
+        <item name="colorPrimary">@color/sakura_primary</item>
+        <item name="colorPrimaryDark">@color/sakura_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/sakura_primary_dark</item>
+        <item name="colorAccent">@color/sakura_secondary</item>
+        <item name="colorSecondary">@color/sakura_secondary</item>
+        <item name="colorSecondaryVariant">@color/sakura_secondary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorMaterial100">@color/sakura_blush</item>
+        <item name="colorMaterial300">@color/sakura_rose</item>
     </style>
 
     <style name="Theme.Start" parent="Theme.MaterialComponents.DayNight">

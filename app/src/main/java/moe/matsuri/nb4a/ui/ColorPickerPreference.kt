@@ -20,6 +20,7 @@ import androidx.preference.PreferenceViewHolder
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.nekohasekai.sagernet.R
 import io.nekohasekai.sagernet.ktx.getColorAttr
+import io.nekohasekai.sagernet.utils.Theme
 import kotlin.math.roundToInt
 
 class ColorPickerPreference
@@ -47,14 +48,20 @@ class ColorPickerPreference
                 getNekoImageViewAtColor(
                     context.getColorAttr(R.attr.colorPrimary),
                     48,
-                    0
+                    0,
+                    getPersistedInt(Theme.PINK_SSR)
                 )
             )
             widgetFrame.visibility = View.VISIBLE
         }
     }
 
-    fun getNekoImageViewAtColor(color: Int, sizeDp: Int, paddingDp: Int): ImageView {
+    fun getNekoImageViewAtColor(
+        color: Int,
+        sizeDp: Int,
+        paddingDp: Int,
+        themeId: Int? = null
+    ): ImageView {
         // dp to pixel
         val factor = context.resources.displayMetrics.density
         val size = (sizeDp * factor).roundToInt()
@@ -63,14 +70,18 @@ class ColorPickerPreference
         return ImageView(context).apply {
             layoutParams = ViewGroup.LayoutParams(size, size)
             setPadding(paddingSize)
-            setImageDrawable(getNekoAtColor(resources, color))
+            setImageDrawable(getNekoAtColor(resources, color, themeId))
         }
     }
 
-    fun getNekoAtColor(res: Resources, color: Int): Drawable {
+    fun getNekoAtColor(res: Resources, color: Int, themeId: Int? = null): Drawable {
         val neko = ResourcesCompat.getDrawable(
             res,
-            R.drawable.ic_baseline_fiber_manual_record_24,
+            if (themeId == Theme.SAKURA) {
+                R.drawable.ic_sakura_paw_24
+            } else {
+                R.drawable.ic_baseline_fiber_manual_record_24
+            },
             null
         )!!
         DrawableCompat.setTint(neko.mutate(), color)
@@ -92,7 +103,7 @@ class ColorPickerPreference
                 i++ //Theme.kt
 
                 val themeId = i
-                val view = getNekoImageViewAtColor(color, 64, 0).apply {
+                val view = getNekoImageViewAtColor(color, 64, 0, themeId).apply {
                     setOnClickListener {
                         persistInt(themeId)
                         dialog.dismiss()

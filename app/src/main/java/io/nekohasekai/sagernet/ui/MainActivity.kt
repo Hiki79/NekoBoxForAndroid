@@ -57,6 +57,7 @@ class MainActivity : ThemedActivity(),
 
     lateinit var binding: LayoutMainBinding
     lateinit var navigation: NavigationView
+    private var renderedServiceState = BaseService.State.Idle
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -362,9 +363,12 @@ class MainActivity : ThemedActivity(),
         msg: String? = null,
         animate: Boolean = false,
     ) {
+        val previousState = renderedServiceState
+        renderedServiceState = state
         DataStore.serviceState = state
 
-        binding.fab.changeState(state, DataStore.serviceState, animate)
+        binding.fab.changeState(state, previousState, animate)
+        binding.connectingCat.setConnecting(state == BaseService.State.Connecting)
         binding.stats.changeState(state)
         if (msg != null) snackbar(getString(R.string.vpn_error, msg)).show()
     }

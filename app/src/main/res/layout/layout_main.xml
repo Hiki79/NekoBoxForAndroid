@@ -18,6 +18,19 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
+        <io.nekohasekai.sagernet.widget.ConnectingCatView
+            android:id="@+id/connecting_cat"
+            android:layout_width="match_parent"
+            android:layout_height="96dp"
+            android:clickable="false"
+            android:elevation="4dp"
+            android:focusable="false"
+            android:importantForAccessibility="no"
+            android:translationY="-48dp"
+            android:visibility="gone"
+            app:layout_anchor="@id/stats"
+            app:layout_anchorGravity="top|center_horizontal" />
+
         <!-- We double trackThickness as half of it will be invisible -->
         <com.google.android.material.progressindicator.CircularProgressIndicator
             android:id="@+id/fabProgress"
@@ -108,6 +121,7 @@
         android:layout_gravity="start"
         app:itemIconTint="@color/navigation_icon"
         app:itemTextColor="@color/navigation_icon"
+        app:headerLayout="@layout/layout_navigation_header"
         app:menu="@menu/main_drawer_menu" />
 
     <com.google.android.material.navigation.NavigationView
@@ -120,6 +134,7 @@
         app:itemShapeAppearance="@style/ShapeAppearance.MaterialComponents.MediumComponent"
         app:itemShapeFillColor="@color/navigation_item"
         app:itemTextColor="@color/navigation_icon"
+        app:headerLayout="@layout/layout_navigation_header"
         app:menu="@menu/main_drawer_menu" />
 
 </androidx.drawerlayout.widget.DrawerLayout>

@@ -1,16 +1,21 @@
 package io.nekohasekai.sagernet.widget
 
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.util.AttributeSet
 import android.view.PointerIcon
 import android.view.View
 import androidx.annotation.DrawableRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.widget.TooltipCompat
+import androidx.core.graphics.drawable.DrawableCompat
 import androidx.dynamicanimation.animation.DynamicAnimation
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.color.MaterialColors
 import androidx.vectordrawable.graphics.drawable.Animatable2Compat
 import androidx.vectordrawable.graphics.drawable.AnimatedVectorDrawableCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -27,6 +32,31 @@ class ServiceButton @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) :
     FloatingActionButton(context, attrs, defStyleAttr), DynamicAnimation.OnAnimationEndListener {
+
+    private val density = resources.displayMetrics.density
+    private val pawBadgeHaloPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = MaterialColors.getColor(
+            this@ServiceButton,
+            com.google.android.material.R.attr.colorSurface,
+        )
+    }
+    private val pawBadgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = MaterialColors.getColor(
+            this@ServiceButton,
+            com.google.android.material.R.attr.colorSecondary,
+        )
+    }
+    private val pawBadge = checkNotNull(
+        AppCompatResources.getDrawable(context, R.drawable.ic_paw_badge)
+    ).mutate().also {
+        DrawableCompat.setTint(
+            it,
+            MaterialColors.getColor(
+                this@ServiceButton,
+                com.google.android.material.R.attr.colorOnSecondary,
+            ),
+        )
+    }
 
     private val callback = object : Animatable2Compat.AnimationCallback() {
         override fun onAnimationEnd(drawable: Drawable) {
@@ -91,6 +121,28 @@ class ServiceButton @JvmOverloads constructor(
         velocity: Float
     ) {
         if (!canceled) progress.hide()
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        val centerInset = 10f * density
+        val centerX = if (layoutDirection == View.LAYOUT_DIRECTION_RTL) {
+            centerInset
+        } else {
+            width - centerInset
+        }
+        val centerY = centerInset
+        canvas.drawCircle(centerX, centerY, 8.5f * density, pawBadgeHaloPaint)
+        canvas.drawCircle(centerX, centerY, 7f * density, pawBadgePaint)
+
+        val pawHalfSize = 4.5f * density
+        pawBadge.setBounds(
+            (centerX - pawHalfSize).toInt(),
+            (centerY - pawHalfSize).toInt(),
+            (centerX + pawHalfSize).toInt(),
+            (centerY + pawHalfSize).toInt(),
+        )
+        pawBadge.draw(canvas)
     }
 
     private fun hideProgress() {

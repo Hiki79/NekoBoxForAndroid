@@ -47,12 +47,14 @@ class RouteSettingsActivity(
 ) : ThemedActivity(resId),
     OnPreferenceDataStoreChangeListener {
 
-    fun init(packageName: String?) {
+    fun init(packageName: String?, routeName: String?, routeDomain: String?) {
         RuleEntity().apply {
             if (!packageName.isNullOrBlank()) {
                 packages = setOf(packageName)
                 name = app.getString(R.string.route_for, PackageCache.loadLabel(packageName))
             }
+            if (!routeName.isNullOrBlank()) name = routeName
+            if (!routeDomain.isNullOrBlank()) domains = routeDomain
         }.init()
     }
 
@@ -211,6 +213,8 @@ class RouteSettingsActivity(
     companion object {
         const val EXTRA_ROUTE_ID = "id"
         const val EXTRA_PACKAGE_NAME = "pkg"
+        const val EXTRA_ROUTE_NAME = "route_name"
+        const val EXTRA_ROUTE_DOMAIN = "route_domain"
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -224,10 +228,13 @@ class RouteSettingsActivity(
 
         if (savedInstanceState == null) {
             val editingId = intent.getLongExtra(EXTRA_ROUTE_ID, 0L)
+            val routeName = intent.getStringExtra(EXTRA_ROUTE_NAME)
+            val routeDomain = intent.getStringExtra(EXTRA_ROUTE_DOMAIN)
+            val hasPrefilledRule = !routeName.isNullOrBlank() || !routeDomain.isNullOrBlank()
             DataStore.editingId = editingId
             runOnDefaultDispatcher {
                 if (editingId == 0L) {
-                    init(intent.getStringExtra(EXTRA_PACKAGE_NAME))
+                    init(intent.getStringExtra(EXTRA_PACKAGE_NAME), routeName, routeDomain)
                 } else {
                     val ruleEntity = SagerDatabase.rulesDao.getById(editingId)
                     if (ruleEntity == null) {
@@ -244,7 +251,7 @@ class RouteSettingsActivity(
                         .replace(R.id.settings, MyPreferenceFragmentCompat())
                         .commit()
 
-                    DataStore.dirty = false
+                    DataStore.dirty = hasPrefilledRule
                     DataStore.profileCacheStore.registerChangeListener(this@RouteSettingsActivity)
                 }
             }

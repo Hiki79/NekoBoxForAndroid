@@ -18,12 +18,14 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import go.Seq
 import io.nekohasekai.sagernet.bg.SagerConnection
+import io.nekohasekai.sagernet.bg.WebDavBackupScheduler
 import io.nekohasekai.sagernet.database.DataStore
 import io.nekohasekai.sagernet.ktx.Logs
 import io.nekohasekai.sagernet.ktx.isOss
 import io.nekohasekai.sagernet.ktx.isPreview
 import io.nekohasekai.sagernet.ktx.runOnDefaultDispatcher
 import io.nekohasekai.sagernet.ui.MainActivity
+import io.nekohasekai.sagernet.sync.WebDavSettings
 import io.nekohasekai.sagernet.utils.*
 import kotlinx.coroutines.DEBUG_PROPERTY_NAME
 import kotlinx.coroutines.DEBUG_PROPERTY_VALUE_ON
@@ -87,6 +89,8 @@ class SagerNet : Application(),
                 }
 
                 updateNotificationChannels()
+                runCatching(WebDavSettings::recoverInterruptedRestore).onFailure { Logs.w(it) }
+                WebDavBackupScheduler.reconfigure()
             }
         }
 

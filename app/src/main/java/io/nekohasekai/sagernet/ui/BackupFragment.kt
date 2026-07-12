@@ -3,323 +3,234 @@ package io.nekohasekai.sagernet.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.os.Parcel
-import android.os.Parcelable
 import android.provider.OpenableColumns
 import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.FileProvider
-import androidx.core.view.isVisible
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.jakewharton.processphoenix.ProcessPhoenix
 import io.nekohasekai.sagernet.BuildConfig
 import io.nekohasekai.sagernet.R
-import io.nekohasekai.sagernet.SagerNet
-import io.nekohasekai.sagernet.bg.Executable
-import io.nekohasekai.sagernet.database.*
-import io.nekohasekai.sagernet.database.preference.KeyValuePair
-import io.nekohasekai.sagernet.database.preference.PublicDatabase
+import io.nekohasekai.sagernet.backup.BackupManager
+import io.nekohasekai.sagernet.bg.WebDavBackupScheduler
+import io.nekohasekai.sagernet.database.DataStore
 import io.nekohasekai.sagernet.databinding.LayoutBackupBinding
-import io.nekohasekai.sagernet.databinding.LayoutImportBinding
 import io.nekohasekai.sagernet.databinding.LayoutProgressBinding
-import io.nekohasekai.sagernet.ktx.*
-import kotlinx.coroutines.delay
-import moe.matsuri.nb4a.utils.Util
-import org.json.JSONArray
-import org.json.JSONObject
+import io.nekohasekai.sagernet.ktx.Logs
+import io.nekohasekai.sagernet.ktx.app
+import io.nekohasekai.sagernet.ktx.onMainDispatcher
+import io.nekohasekai.sagernet.ktx.readableMessage
+import io.nekohasekai.sagernet.ktx.runOnLifecycleDispatcher
+import io.nekohasekai.sagernet.ktx.runOnIoDispatcher
+import io.nekohasekai.sagernet.ktx.snackbar
+import io.nekohasekai.sagernet.ktx.startFilesForResult
+import io.nekohasekai.sagernet.ktx.triggerFullRestart
+import io.nekohasekai.sagernet.sync.WebDavSettings
+import io.nekohasekai.sagernet.sync.WebDavTransferLock
 import java.io.File
-import java.util.*
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class BackupFragment : NamedFragment(R.layout.layout_backup) {
 
     override fun name0() = app.getString(R.string.backup)
 
-    var content = ""
+    private var pendingExport = ""
+
     private val exportSettings =
-        registerForActivityResult(ActivityResultContracts.CreateDocument()) { data ->
-            if (data != null) {
-                runOnDefaultDispatcher {
-                    try {
-                        requireActivity().contentResolver.openOutputStream(
-                            data
-                        )!!.bufferedWriter().use {
-                            it.write(content)
-                        }
-                        onMainDispatcher {
-                            snackbar(getString(R.string.action_export_msg)).show()
-                        }
-                    } catch (e: Exception) {
-                        Logs.w(e)
-                        onMainDispatcher {
-                            snackbar(e.readableMessage).show()
-                        }
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri == null) return@registerForActivityResult
+            runOnLifecycleDispatcher {
+                try {
+                    requireContext().contentResolver.openOutputStream(uri)?.bufferedWriter()?.use {
+                        it.write(pendingExport)
+                    } ?: error("Unable to open the selected file")
+                    onMainDispatcher {
+                        snackbar(getString(R.string.action_export_msg)).show()
+                    }
+                } catch (error: Exception) {
+                    Logs.w(error)
+                    onMainDispatcher {
+                        snackbar(error.readableMessage).show()
                     }
                 }
             }
         }
+
+    private val importFile = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri != null) runOnLifecycleDispatcher { startImport(uri) }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
         val binding = LayoutBackupBinding.bind(view)
 
-        binding.resetSettings.setOnClickListener {
-            MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.confirm)
-                .setMessage(R.string.reset_settings_message)
-                .setNegativeButton(R.string.no, null)
-                .setPositiveButton(R.string.yes) { _, _ ->
-                    DataStore.configurationStore.reset()
-                    triggerFullRestart(requireContext())
-                }
-                .show()
-        }
-
         binding.actionExport.setOnClickListener {
-            runOnDefaultDispatcher {
-                content = doBackup(
-                    binding.backupConfigurations.isChecked,
-                    binding.backupRules.isChecked,
-                    binding.backupSettings.isChecked
-                )
+            val selection = binding.backupSelection()
+            runOnLifecycleDispatcher {
+                pendingExport = createBackup(selection)
                 onMainDispatcher {
-                    startFilesForResult(
-                        exportSettings, "nekobox_backup_${Date().toLocaleString()}.json"
-                    )
+                    startFilesForResult(exportSettings, backupFileName())
                 }
             }
         }
 
         binding.actionShare.setOnClickListener {
-            runOnDefaultDispatcher {
-                content = doBackup(
-                    binding.backupConfigurations.isChecked,
-                    binding.backupRules.isChecked,
-                    binding.backupSettings.isChecked
-                )
-                app.cacheDir.mkdirs()
-                val cacheFile = File(
-                    app.cacheDir, "nekobox_backup_${Date().toLocaleString()}.json"
-                )
-                cacheFile.writeText(content)
+            val selection = binding.backupSelection()
+            runOnLifecycleDispatcher {
+                val content = createBackup(selection)
+                val cacheFile = File(requireContext().cacheDir, backupFileName()).apply {
+                    parentFile?.mkdirs()
+                    writeText(content, Charsets.UTF_8)
+                }
                 onMainDispatcher {
                     startActivity(
                         Intent.createChooser(
-                            Intent(Intent.ACTION_SEND).setType("application/json")
+                            Intent(Intent.ACTION_SEND)
+                                .setType("application/json")
                                 .setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                 .putExtra(
-                                    Intent.EXTRA_STREAM, FileProvider.getUriForFile(
-                                        app, BuildConfig.APPLICATION_ID + ".cache", cacheFile
-                                    )
-                                ), app.getString(R.string.abc_shareactionprovider_share_with)
+                                    Intent.EXTRA_STREAM,
+                                    FileProvider.getUriForFile(
+                                        requireContext(),
+                                        BuildConfig.APPLICATION_ID + ".cache",
+                                        cacheFile,
+                                    ),
+                                ),
+                            getString(R.string.abc_shareactionprovider_share_with),
                         )
                     )
                 }
-
             }
         }
 
         binding.actionImportFile.setOnClickListener {
-            startFilesForResult(importFile, "*/*")
+            startFilesForResult(importFile, "application/json")
+        }
+
+        binding.webdavSync.setOnClickListener {
+            startActivity(Intent(requireContext(), WebDavSettingsActivity::class.java))
+        }
+
+        binding.resetSettings.setOnClickListener {
+            com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.confirm)
+                .setMessage(R.string.reset_settings_message_with_cloud)
+                .setNegativeButton(R.string.no, null)
+                .setPositiveButton(R.string.yes) { _, _ ->
+                    val activity = requireActivity()
+                    val progress = LayoutProgressBinding.inflate(layoutInflater).apply {
+                        content.text = getString(R.string.resetting_settings)
+                    }
+                    val progressDialog =
+                        com.google.android.material.dialog.MaterialAlertDialogBuilder(activity)
+                            .setView(progress.root)
+                            .setCancelable(false)
+                            .show()
+                    runOnIoDispatcher {
+                        val result = runCatching {
+                            WebDavBackupScheduler.cancel().get()
+                            WebDavTransferLock.withLock {
+                                WebDavSettings.clear()
+                                DataStore.configurationStore.reset()
+                            }
+                        }
+                        if (result.isSuccess) {
+                            onMainDispatcher {
+                                if (!activity.isFinishing && !activity.isDestroyed) {
+                                    progressDialog.dismiss()
+                                }
+                            }
+                            triggerFullRestart(app)
+                        } else {
+                            val error = result.exceptionOrNull()!!
+                            Logs.w(error)
+                            onMainDispatcher {
+                                if (!activity.isFinishing && !activity.isDestroyed) {
+                                    progressDialog.dismiss()
+                                    val restarted = java.util.concurrent.atomic.AtomicBoolean(false)
+                                    fun restartOnce() {
+                                        if (restarted.compareAndSet(false, true)) {
+                                            triggerFullRestart(app)
+                                        }
+                                    }
+                                    com.google.android.material.dialog.MaterialAlertDialogBuilder(
+                                        activity
+                                    )
+                                        .setTitle(R.string.error_title)
+                                        .setMessage(error.readableMessage)
+                                        .setPositiveButton(android.R.string.ok) { _, _ ->
+                                            restartOnce()
+                                        }
+                                        .setOnDismissListener { restartOnce() }
+                                        .show()
+                                } else {
+                                    triggerFullRestart(app)
+                                }
+                            }
+                        }
+                    }
+                }
+                .show()
         }
     }
 
-    fun Parcelable.toBase64Str(): String {
-        val parcel = Parcel.obtain()
-        writeToParcel(parcel, 0)
-        try {
-            return Util.b64EncodeUrlSafe(parcel.marshall())
-        } finally {
-            parcel.recycle()
-        }
-    }
+    private fun LayoutBackupBinding.backupSelection() = BackupSelection(
+        profile = backupConfigurations.isChecked,
+        rule = backupRules.isChecked,
+        setting = backupSettings.isChecked,
+    )
 
-    fun doBackup(profile: Boolean, rule: Boolean, setting: Boolean): String {
-        val out = JSONObject().apply {
-            put("version", 1)
-            if (profile) {
-                put("profiles", JSONArray().apply {
-                    SagerDatabase.proxyDao.getAll().forEach {
-                        put(it.toBase64Str())
-                    }
-                })
+    private fun createBackup(selection: BackupSelection) = BackupManager.createBackup(
+        profile = selection.profile,
+        rule = selection.rule,
+        setting = selection.setting,
+    )
 
-                put("groups", JSONArray().apply {
-                    SagerDatabase.groupDao.allGroups().forEach {
-                        put(it.toBase64Str())
-                    }
-                })
-            }
-            if (rule) {
-                put("rules", JSONArray().apply {
-                    SagerDatabase.rulesDao.allRules().forEach {
-                        put(it.toBase64Str())
-                    }
-                })
-            }
-            if (setting) {
-                put("settings", JSONArray().apply {
-                    PublicDatabase.kvPairDao.all().forEach {
-                        put(it.toBase64Str())
-                    }
-                })
-            }
-        }
-        return out.toStringPretty()
-    }
+    private suspend fun startImport(uri: Uri) {
+        val fileName = runCatching {
+            requireContext().contentResolver.query(uri, null, null, null, null)
+                ?.use { cursor ->
+                    if (!cursor.moveToFirst()) return@use null
+                    cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        .takeIf { it >= 0 }
+                        ?.let(cursor::getString)
+                }
+        }.getOrNull()
+            ?.takeIf { it.isNotBlank() }
+            ?: uri.lastPathSegment.orEmpty().substringAfterLast('/').substringAfter(':')
 
-    val importFile = registerForActivityResult(ActivityResultContracts.GetContent()) { file ->
-        if (file != null) {
-            runOnDefaultDispatcher {
-                startImport(file)
-            }
-        }
-    }
-
-    suspend fun startImport(file: Uri) {
-        val fileName = requireContext().contentResolver.query(file, null, null, null, null)
-            ?.use { cursor ->
-                cursor.moveToFirst()
-                cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME).let(cursor::getString)
-            }
-            ?.takeIf { it.isNotBlank() } ?: file.pathSegments.last()
-            .substringAfterLast('/')
-            .substringAfter(':')
-
-        if (!fileName.endsWith(".json")) {
+        if (!fileName.endsWith(".json", ignoreCase = true)) {
             onMainDispatcher {
                 snackbar(getString(R.string.backup_not_file, fileName)).show()
             }
             return
         }
 
-        suspend fun invalid() = onMainDispatcher {
+        val content = try {
+            requireContext().contentResolver.openInputStream(uri)?.use(BackupManager::parse)
+                ?: error("Unable to open the selected file")
+        } catch (error: Exception) {
+            Logs.w(error)
             onMainDispatcher {
                 snackbar(getString(R.string.invalid_backup_file)).show()
             }
-        }
-
-        val content = try {
-            JSONObject((requireContext().contentResolver.openInputStream(file) ?: return).use {
-                it.bufferedReader().readText()
-            })
-        } catch (e: Exception) {
-            Logs.w(e)
-            invalid()
-            return
-        }
-        val version = content.optInt("version", 0)
-        if (version < 1 || version > 1) {
-            invalid()
             return
         }
 
         onMainDispatcher {
-            val import = LayoutImportBinding.inflate(layoutInflater)
-            if (!content.has("profiles")) {
-                import.backupConfigurations.isVisible = false
-            }
-            if (!content.has("rules")) {
-                import.backupRules.isVisible = false
-            }
-            if (!content.has("settings")) {
-                import.backupSettings.isVisible = false
-            }
-            MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.backup_import)
-                .setView(import.root)
-                .setPositiveButton(R.string.backup_import) { _, _ ->
-                    SagerNet.stopService()
-
-                    val binding = LayoutProgressBinding.inflate(layoutInflater)
-                    binding.content.text = getString(R.string.backup_importing)
-                    val dialog = AlertDialog.Builder(requireContext())
-                        .setView(binding.root)
-                        .setCancelable(false)
-                        .show()
-                    runOnDefaultDispatcher {
-                        runCatching {
-                            finishImport(
-                                content,
-                                import.backupConfigurations.isChecked,
-                                import.backupRules.isChecked,
-                                import.backupSettings.isChecked
-                            )
-                            triggerFullRestart(requireContext())
-                        }.onFailure {
-                            Logs.w(it)
-                            onMainDispatcher {
-                                alert(it.readableMessage).tryToShow()
-                            }
-                        }
-
-                        onMainDispatcher {
-                            dialog.dismiss()
-                        }
-                    }
-                }
-                .setNegativeButton(android.R.string.cancel, null)
-                .show()
+            BackupRestoreDialog.show(requireActivity(), content)
         }
     }
 
-    fun finishImport(
-        content: JSONObject, profile: Boolean, rule: Boolean, setting: Boolean
-    ) {
-        if (profile && content.has("profiles")) {
-            val profiles = mutableListOf<ProxyEntity>()
-            val jsonProfiles = content.getJSONArray("profiles")
-            for (i in 0 until jsonProfiles.length()) {
-                val data = Util.b64Decode(jsonProfiles[i] as String)
-                val parcel = Parcel.obtain()
-                parcel.unmarshall(data, 0, data.size)
-                parcel.setDataPosition(0)
-                profiles.add(ProxyEntity.CREATOR.createFromParcel(parcel))
-                parcel.recycle()
-            }
-            SagerDatabase.proxyDao.reset()
-            SagerDatabase.proxyDao.insert(profiles)
-
-            val groups = mutableListOf<ProxyGroup>()
-            val jsonGroups = content.getJSONArray("groups")
-            for (i in 0 until jsonGroups.length()) {
-                val data = Util.b64Decode(jsonGroups[i] as String)
-                val parcel = Parcel.obtain()
-                parcel.unmarshall(data, 0, data.size)
-                parcel.setDataPosition(0)
-                groups.add(ProxyGroup.CREATOR.createFromParcel(parcel))
-                parcel.recycle()
-            }
-            SagerDatabase.groupDao.reset()
-            SagerDatabase.groupDao.insert(groups)
-        }
-        if (rule && content.has("rules")) {
-            val rules = mutableListOf<RuleEntity>()
-            val jsonRules = content.getJSONArray("rules")
-            for (i in 0 until jsonRules.length()) {
-                val data = Util.b64Decode(jsonRules[i] as String)
-                val parcel = Parcel.obtain()
-                parcel.unmarshall(data, 0, data.size)
-                parcel.setDataPosition(0)
-                rules.add(ParcelizeBridge.createRule(parcel))
-                parcel.recycle()
-            }
-            SagerDatabase.rulesDao.reset()
-            SagerDatabase.rulesDao.insert(rules)
-        }
-        if (setting && content.has("settings")) {
-            val settings = mutableListOf<KeyValuePair>()
-            val jsonSettings = content.getJSONArray("settings")
-            for (i in 0 until jsonSettings.length()) {
-                val data = Util.b64Decode(jsonSettings[i] as String)
-                val parcel = Parcel.obtain()
-                parcel.unmarshall(data, 0, data.size)
-                parcel.setDataPosition(0)
-                settings.add(KeyValuePair.CREATOR.createFromParcel(parcel))
-                parcel.recycle()
-            }
-            PublicDatabase.kvPairDao.reset()
-            PublicDatabase.kvPairDao.insert(settings)
-        }
+    private fun backupFileName(): String {
+        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+        return "nekobox_backup_$timestamp.json"
     }
 
+    private data class BackupSelection(
+        val profile: Boolean,
+        val rule: Boolean,
+        val setting: Boolean,
+    )
 }
